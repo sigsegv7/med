@@ -31,6 +31,10 @@
 #include <math.h>
 #include "sampler.h"
 
+#ifndef __linux__
+#error "Host must be Linux"
+#endif  /* __linux__ */
+
 struct fork_stat {
     float mean;
     float stddev;
