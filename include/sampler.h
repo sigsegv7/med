@@ -34,7 +34,7 @@
 #include <stddef.h>
 
 #define STAT_FILE "/proc/stat"
-#define MAX_SAMPLES 64
+#define MAX_SAMPLES 128
 #define SAMPLE_PERIOD 9000      /* usec */
 
 /*

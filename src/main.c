@@ -28,12 +28,61 @@
  */
 
 #include <stdio.h>
+#include <math.h>
 #include "sampler.h"
+
+struct fork_stat {
+    float mean;
+    float stddev;
+    float variance;
+    float sigma;
+};
+
+static void
+stat_compute(struct stat_pool *pool, struct fork_stat *res)
+{
+    float sum = 0;
+    float x;
+
+    if (pool == NULL || res == NULL) {
+        return;
+    }
+
+    /* Reset all values */
+    sum = 0;
+    res->mean = 0;
+    res->stddev = 0;
+
+    /* Compute the mean */
+    for (size_t i = 0; i < pool->n_samples; ++i) {
+        sum += pool->pool[i];
+    }
+
+    res->mean = sum / pool->n_samples;
+    sum = 0;
+
+    /* Compute the standard deviation */
+    for (size_t i = 0; i < pool->n_samples; ++i) {
+        sum += pow(pool->pool[i] - res->mean, 2);
+    }
+
+    res->variance = sum / pool->n_samples;
+    res->stddev = sqrt(res->variance);
+
+    for (size_t i = 0; i < pool->n_samples; ++i) {
+        x = (float)(pool->pool[pool->n_samples - 1]);
+        x = (x - res->mean) / res->stddev;
+        if (x > res->sigma) {
+            res->sigma = x;
+        }
+    }
+}
 
 int
 main(void)
 {
     struct stat_pool pool;
+    struct fork_stat stat;
     int error;
 
     /* Open a new stat pool */
@@ -42,16 +91,17 @@ main(void)
         return error;
     }
 
-    if (stat_pool_sample(&pool, MAX_SAMPLES) < 0) {
-        printf("error: failed to sample\n");
-        stat_pool_close(&pool);
+    for (int i = 0; i < 30; ++i) {
+        if (stat_pool_sample(&pool, MAX_SAMPLES) < 0) {
+            printf("error: failed to sample\n");
+            stat_pool_close(&pool);
+        }
+
+        stat_compute(&pool, &stat);
+        printf("[%d/30]: rate/σ=%f\n", i, stat.sigma);
+        stat.sigma = 0;
     }
 
-    for (int i = 0; i < pool.n_samples; ++i) {
-        printf("%zu ", pool.pool[i]);
-    }
-
-    printf("\n");
     stat_pool_close(&pool);
     return 0;
 }

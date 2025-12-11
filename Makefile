@@ -5,7 +5,7 @@ CC = clang
 
 .PHONY: all
 all: $(OFILES)
-	$(CC) $(OFILES) -o med
+	$(CC) $(OFILES) -lm -o med
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
